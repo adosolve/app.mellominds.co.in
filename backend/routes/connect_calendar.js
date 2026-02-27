@@ -1,0 +1,104 @@
+import express from 'express';
+import { google } from 'googleapis';
+import pool from '../config/database.js';
+
+const router = express.Router();
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'http://localhost:3000/api/connect-calendar/callback'
+);
+
+// Middleware to ensure authentication
+const ensureAuthenticated = (req, res, next) => {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.status(401).json({ error: 'Not authenticated' });
+};
+
+router.use(ensureAuthenticated);
+
+// GET /api/connect-calendar/start - Initiate OAuth
+router.get('/start', (req, res) => {
+    const scopes = [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events',
+        'profile',
+        'email' // Add these to ensure Passport can verify the user identity for linking
+    ];
+
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline', // Critical for receiving refresh_token
+        scope: scopes,
+        prompt: 'consent', // Force consent to ensure we get refresh_token
+        state: req.user.id.toString() // Store user ID in state (though Passport handles session)
+    });
+
+    // res.json({ url }); // Changed to redirect for better UX with direct link
+    res.redirect(url);
+});
+
+// GET /api/connect-calendar/callback 
+router.get('/callback', async (req, res) => {
+    const { code } = req.query;
+
+    if (!code) {
+        return res.status(400).json({ error: 'Authorization code missing' });
+    }
+
+    try {
+        // 1. Exchange access code for tokens
+        const { tokens } = await oauth2Client.getToken(code);
+
+        // 2. Save tokens to database
+        // We use an UPSERT (INSERT ... ON CONFLICT) to handle re-connections
+        // Note: tokens.expiry_date is a timestamp (ms)
+
+        // Check if we need to update or insert
+        const existing = await pool.query(
+            "SELECT * FROM UserIntegrations WHERE user_id = $1 AND provider = 'google'",
+            [req.user.id]
+        );
+
+        if (existing.rows.length > 0) {
+            await pool.query(
+                `UPDATE UserIntegrations 
+                 SET access_token = $1, refresh_token = $2, expiry_date = $3, updated_at = NOW()
+                 WHERE user_id = $4 AND provider = 'google'`,
+                [tokens.access_token, tokens.refresh_token, tokens.expiry_date, req.user.id]
+            );
+        } else {
+            await pool.query(
+                `INSERT INTO UserIntegrations (user_id, provider, access_token, refresh_token, expiry_date)
+                 VALUES ($1, 'google', $2, $3, $4)`,
+                [req.user.id, tokens.access_token, tokens.refresh_token, tokens.expiry_date]
+            );
+        }
+
+        // 3. Redirect back to frontend
+        // Assuming frontend is running on process.env.FRONTEND_URL (e.g. localhost:5173)
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard?calendar_connected=true`);
+
+    } catch (error) {
+        console.error('Error in Google Callback:', error);
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard?calendar_error=failed`);
+    }
+});
+
+// GET /api/connect-calendar/status - Check if connected
+router.get('/status', async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id FROM UserIntegrations WHERE user_id = $1 AND provider = 'google'",
+            [req.user.id]
+        );
+        res.json({ connected: result.rows.length > 0 });
+    } catch (error) {
+        console.error('Error checking status:', error);
+        res.status(500).json({ error: 'Failed to check status' });
+    }
+});
+
+export default router;
