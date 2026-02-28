@@ -9,6 +9,7 @@ import CreateBooking from './components/CreateBooking';
 import SendBookingLinkModal from './components/SendBookingLinkModal';
 import CalendarPage from './components/CalendarPage';
 import LoginPage from './components/LoginPage';
+import SignUpPage from './components/SignUpPage';
 import PublicBookingPage from './components/PublicBookingPage';
 import CreateEventPage from './components/CreateEventPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -446,6 +447,7 @@ const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>

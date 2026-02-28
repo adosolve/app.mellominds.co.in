@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './LoginPage.css'
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000'
+
 const SignUpPage: React.FC = () => {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -9,6 +13,8 @@ const SignUpPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   
   const [phoneNumber, setPhoneNumber] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -24,21 +30,80 @@ const SignUpPage: React.FC = () => {
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault()
-    if (fullName && email && password && confirmPassword) {
-      setStep(2)
+    setError('')
+    
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError('Please fill in all required fields')
+      return
     }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+    
+    setStep(2)
   }
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
-    if (phoneNumber && dateOfBirth) {
-      setStep(3)
+    setError('')
+    
+    if (!phoneNumber || !dateOfBirth) {
+      setError('Phone number and date of birth are required')
+      return
     }
+    
+    setStep(3)
   }
 
-  const handleSelectPlan = (e: React.FormEvent) => {
+  const handleSelectPlan = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Complete:', { fullName, email, phoneNumber, dateOfBirth, gender, specialization, languages, country, state, city, pincode, address })
+    setError('')
+    setLoading(true)
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          phoneNumber,
+          dateOfBirth,
+          gender,
+          specialization,
+          languages,
+          country,
+          state,
+          city,
+          pincode,
+          address
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed')
+      }
+
+      // Registration successful, redirect to login
+      alert('Registration successful! Please login.')
+      navigate('/')
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -67,6 +132,19 @@ const SignUpPage: React.FC = () => {
               <p className="welcome-text">
                 <strong>Create your account to get started</strong>
               </p>
+
+              {error && (
+                <div style={{ 
+                  padding: '10px', 
+                  marginBottom: '15px', 
+                  backgroundColor: '#fee', 
+                  border: '1px solid #fcc', 
+                  borderRadius: '4px',
+                  color: '#c33'
+                }}>
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSignUp}>
                 <div className="form-group">
@@ -193,6 +271,19 @@ const SignUpPage: React.FC = () => {
                 <strong>Personal & Professional Information</strong>
               </p>
 
+              {error && (
+                <div style={{ 
+                  padding: '10px', 
+                  marginBottom: '15px', 
+                  backgroundColor: '#fee', 
+                  border: '1px solid #fcc', 
+                  borderRadius: '4px',
+                  color: '#c33'
+                }}>
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleNext}>
                 <div className="form-group">
                   <label htmlFor="phoneNumber">Phone Number<span style={{color: 'red'}}>*</span></label>
@@ -287,6 +378,19 @@ const SignUpPage: React.FC = () => {
                 <strong>Location & Address Information</strong>
               </p>
 
+              {error && (
+                <div style={{ 
+                  padding: '10px', 
+                  marginBottom: '15px', 
+                  backgroundColor: '#fee', 
+                  border: '1px solid #fcc', 
+                  borderRadius: '4px',
+                  color: '#c33'
+                }}>
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSelectPlan}>
                 <div className="form-group">
                   <label htmlFor="country">Country<span style={{color: 'red'}}>*</span></label>
@@ -356,8 +460,8 @@ const SignUpPage: React.FC = () => {
                   />
                 </div>
 
-                <button type="submit" className="login-button">
-                  Select a plan →
+                <button type="submit" className="login-button" disabled={loading}>
+                  {loading ? 'Creating Account...' : 'Select a plan →'}
                 </button>
               </form>
             </>

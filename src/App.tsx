@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LoginPage from './components/LoginPage'
-import SignUpPage from './components/SignUpPage'
+import SignUpPage from '../frontend/src/components/SignUpPage'
 import BookingPage from './components/BookingPage'
 
 const App: React.FC = () => {
