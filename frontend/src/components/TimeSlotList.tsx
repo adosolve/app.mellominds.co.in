@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface TimeSlotListProps {
     calendarId: number;
@@ -10,17 +10,9 @@ interface TimeSlotListProps {
 const TimeSlotList: React.FC<TimeSlotListProps> = ({ calendarId, selectedDate, onSlotSelect, selectedSlot }) => {
     const [slots, setSlots] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (calendarId && selectedDate) {
-            fetchSlots();
-        }
-    }, [calendarId, selectedDate]);
-
-    const fetchSlots = async () => {
+    const fetchSlots = useCallback(async () => {
         setLoading(true);
-        setError(null);
         setSlots([]);
 
         try {
@@ -31,15 +23,20 @@ const TimeSlotList: React.FC<TimeSlotListProps> = ({ calendarId, selectedDate, o
                 const data = await response.json();
                 setSlots(data);
             } else {
-                setError('Failed to load slots');
+                console.error('Failed to load slots');
             }
         } catch (err) {
             console.error('Error fetching slots:', err);
-            setError('Error loading availability');
         } finally {
             setLoading(false);
         }
-    };
+    }, [calendarId, selectedDate]);
+
+    useEffect(() => {
+        if (calendarId && selectedDate) {
+            fetchSlots();
+        }
+    }, [calendarId, selectedDate, fetchSlots]);
 
     const formatTime = (isoString: string) => {
         return new Date(isoString).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Iconly } from 'react-iconly'; // Assuming Iconly is available or use SVG
+
 
 interface InlineCalendarProps {
     onDateSelect: (date: string) => void;
@@ -49,7 +49,7 @@ const InlineCalendar: React.FC<InlineCalendarProps> = ({ onDateSelect, selectedD
 
         // Days
         for (let day = 1; day <= totalDays; day++) {
-            const dateStr = new Date(year, month, day).toLocaleDateString();
+
 
             // Check if selected
             // Construct YYYY-MM-DD for comparison

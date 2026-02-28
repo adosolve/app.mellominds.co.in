@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './QuestionModal.module.css';
 
 interface Question {
@@ -20,13 +20,13 @@ interface QuestionModalProps {
 }
 
 const QuestionModal: React.FC<QuestionModalProps> = ({ isOpen, onClose, onSave, editingQuestion }) => {
-    const defaultQuestion: Question = {
+    const defaultQuestion: Question = useMemo(() => ({
         label: '',
         key: '',
         type: 'text',
         required: false,
         options: []
-    };
+    }), []);
 
     const [formData, setFormData] = useState<Question>(defaultQuestion);
 
@@ -38,7 +38,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ isOpen, onClose, onSave, 
                 setFormData(defaultQuestion);
             }
         }
-    }, [isOpen, editingQuestion]);
+    }, [isOpen, editingQuestion, defaultQuestion]);
 
     if (!isOpen) return null;
 
