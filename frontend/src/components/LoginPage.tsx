@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './LoginPage.css'
+import { API_URL } from '../config/api'
 
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -25,8 +26,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault()
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000'
-      const response = await fetch(`${apiUrl}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Important: send cookies
@@ -50,8 +50,7 @@ const LoginPage: React.FC = () => {
 
   // Handle Google login - redirect to backend OAuth endpoint
   const handleGoogleLogin = () => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000'
-    window.location.href = `${apiUrl}/auth/google`
+    window.location.href = `${API_URL}/auth/google`
   }
 
   return (
