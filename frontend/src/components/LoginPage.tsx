@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import './LoginPage.css'
 
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const LoginPage: React.FC = () => {
@@ -25,7 +25,8 @@ const LoginPage: React.FC = () => {
     e.preventDefault()
 
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000'
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Important: send cookies
@@ -49,7 +50,8 @@ const LoginPage: React.FC = () => {
 
   // Handle Google login - redirect to backend OAuth endpoint
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/auth/google'
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000'
+    window.location.href = `${apiUrl}/auth/google`
   }
 
   return (
@@ -149,7 +151,7 @@ const LoginPage: React.FC = () => {
           </button>
 
           <p className="signup-text">
-            Don't have an account? <a href="/signup">Create an account!</a>
+            Don't have an account? <Link to="/signup">Create an account!</Link>
           </p>
 
           <p className="footer-text">
